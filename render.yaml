@@ -1,0 +1,21 @@
+# Render Blueprint: single Web Service (API + static frontend)
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: mgsulbar
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm run render:build
+    startCommand: npm run render:start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

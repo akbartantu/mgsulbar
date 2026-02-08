@@ -1,0 +1,45 @@
+---
+alwaysApply: true
+---
+## project-docs-first-workflow
+
+This project must follow a documentation-first workflow.
+
+### mandatory documents
+Every project MUST have and maintain these documents:
+
+1. master-plan.md  
+   - Defines product scope, modules, pages, use cases, workflows, and data sources.
+   - Structure must follow the MGANZ master plan pattern:
+     - module classification
+     - pages per module
+     - use cases with workflow + data read/write
+     - governance rules
+
+2. sprint-planning.md  
+   - Defines sprint goal, scope, user stories, acceptance criteria.
+   - Aligned with the master plan.
+   - Only features defined in the master plan may appear here.
+
+3. qa-testing-guide.md  
+   - Written per sprint.
+   - Uses US / TC format.
+   - Defines step-by-step test cases, expected results, and completion criteria.
+
+4. troubleshooting-guide.md  
+   - Logs problems, causes, fixes, and verification steps.
+   - Updated whenever issues or workarounds are discovered.
+
+### working rules
+- Start every new project or major feature by creating or updating ALL four documents.
+- Do not write or modify implementation code before these documents exist.
+- When requirements or behavior change:
+  - update the relevant document first
+  - then update code to match the document
+- Documents are the source of truth.
+- Code that contradicts documentation is considered incorrect.
+
+### forbidden behavior
+- Do not skip documentation.
+- Do not keep docs outdated.
+- Do not implement features that are not documented.

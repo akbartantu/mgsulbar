@@ -1,0 +1,19 @@
+---
+alwaysApply: true
+---
+rule: project-folder-lifecycle-rule
+
+the project uses a single app tree in dawet-repo (no on production / ready to deploy folders).
+
+dawet-repo:
+- contains the full app (frontend, server, docs) and mirrors the GitHub repo
+- used for both development and deployment
+- all new files and features must be created here
+
+render deployment:
+- root directory is dawet-repo
+- no promotion step; push to the connected branch triggers deploy
+
+fallback rule:
+- if uncertain, work in dawet-repo
+--

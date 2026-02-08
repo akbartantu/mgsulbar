@@ -1,0 +1,40 @@
+---
+alwaysApply: true
+---
+# safe-explicit-project-rule
+
+## Project Context
+- This is a real codebase with existing contracts.
+- Stability and correctness matter more than speed.
+
+## Tech Stack
+- Frontend: React + TypeScript
+- Styling: Tailwind CSS
+- Backend: REST-style API
+- Authentication: Context-based
+
+## Coding Standards
+- Use strict TypeScript (no `any` unless explicitly approved).
+- Prefer functional components.
+- Keep functions small and single-purpose.
+- Follow existing patterns in the repository.
+
+## Creation Policy
+- New APIs, files, or libraries are allowed ONLY if:
+  - Explicitly requested, OR
+  - Clearly proposed and approved first.
+- Never assume backend endpoints or data shapes.
+
+## Change Management
+- For multi-file changes:
+  1. Explain intent
+  2. Propose a minimal plan
+  3. List files to be modified
+- After changes:
+  - Summarize what changed
+  - Explain how to test or verify
+
+## Forbidden
+- No silent breaking changes
+- No unnecessary refactors
+- No dependency creep
