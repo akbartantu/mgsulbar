@@ -767,51 +767,6 @@ export default function CreateLetterPage() {
                 />
               </div>
 
-              {/* Undangan: event details (Hari/Tanggal, Waktu, Tempat, Acara) */}
-              {selectedTemplate === 'sk-undangan' && (
-                <div className="space-y-3 rounded-lg border border-border p-4 bg-muted/30">
-                  <p className="text-sm font-medium text-muted-foreground">Detail Acara (kolom sejajar)</p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="eventDate">Hari/Tanggal</Label>
-                      <Input
-                        id="eventDate"
-                        placeholder="Hari, Tanggal Lengkap"
-                        value={formData.eventDate}
-                        onChange={(e) => handleInputChange('eventDate', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="eventWaktu">Waktu</Label>
-                      <Input
-                        id="eventWaktu"
-                        placeholder="Pukul Mulai - Selesai WIB"
-                        value={formData.eventWaktu}
-                        onChange={(e) => handleInputChange('eventWaktu', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="eventTempat">Tempat</Label>
-                      <Input
-                        id="eventTempat"
-                        placeholder="Lokasi Lengkap"
-                        value={formData.eventTempat}
-                        onChange={(e) => handleInputChange('eventTempat', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="eventAcara">Acara</Label>
-                      <Input
-                        id="eventAcara"
-                        placeholder="Nama Acara"
-                        value={formData.eventAcara}
-                        onChange={(e) => handleInputChange('eventAcara', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Content */}
               <div className="space-y-2">
                 <Label htmlFor="content">Isi Surat <span className="text-destructive">*</span></Label>
@@ -959,6 +914,50 @@ export default function CreateLetterPage() {
                       onKeyDown={contentEditable.handleKeyDown}
                       suppressContentEditableWarning
                     />
+                  )}
+                  {/* Detail Acara (Hari/Tanggal, Waktu, Tempat, Acara) — inside Isi Surat, for undangan */}
+                  {selectedTemplate === 'sk-undangan' && (
+                    <div className="mt-3 space-y-3 rounded-lg border border-border p-4 bg-muted/30">
+                      <p className="text-sm font-medium text-muted-foreground">Detail Acara (kolom sejajar)</p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="eventDate">Hari/Tanggal</Label>
+                          <Input
+                            id="eventDate"
+                            placeholder="Hari, Tanggal Lengkap"
+                            value={formData.eventDate}
+                            onChange={(e) => handleInputChange('eventDate', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="eventWaktu">Waktu</Label>
+                          <Input
+                            id="eventWaktu"
+                            placeholder="Pukul Mulai - Selesai WIB"
+                            value={formData.eventWaktu}
+                            onChange={(e) => handleInputChange('eventWaktu', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="eventTempat">Tempat</Label>
+                          <Input
+                            id="eventTempat"
+                            placeholder="Lokasi Lengkap"
+                            value={formData.eventTempat}
+                            onChange={(e) => handleInputChange('eventTempat', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="eventAcara">Acara</Label>
+                          <Input
+                            id="eventAcara"
+                            placeholder="Nama Acara"
+                            value={formData.eventAcara}
+                            onChange={(e) => handleInputChange('eventAcara', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   )}
                   {formData.content.trim() !== '' && (
                     <div className="mt-4 rounded-lg border border-border bg-white dark:bg-zinc-900 shadow-sm overflow-hidden">

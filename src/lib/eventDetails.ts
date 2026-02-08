@@ -11,12 +11,16 @@ export const EVENT_DETAILS_PLACEHOLDER = '{{EVENT_DETAILS}}';
 export interface EventDetailsSource {
   eventDate?: string;
   eventWaktu?: string;
+  /** Server/letter field name */
   eventLocation?: string;
+  /** Form field name (Tempat) */
+  eventTempat?: string;
   eventAcara?: string;
 }
 
 function getEventValues(src: EventDetailsSource): (string | undefined)[] {
-  return [src.eventDate, src.eventWaktu, src.eventLocation, src.eventAcara];
+  const tempat = src.eventLocation ?? src.eventTempat;
+  return [src.eventDate, src.eventWaktu, tempat, src.eventAcara];
 }
 
 /** Returns HTML for the event block with aligned colons (label fixed width). */

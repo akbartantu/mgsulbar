@@ -45,6 +45,26 @@ function sanitizeAttributes(el: Element): Record<string, string> {
       }
     }
     if (!attrs['style']) attrs['style'] = 'margin-left: 40px';
+  } else if (tag === 'div' || tag === 'span') {
+    // Safe layout styles for event-details block (aligned colons)
+    const allowed: string[] = [];
+    if (/display\s*:\s*flex/i.test(style)) allowed.push('display: flex');
+    if (/display\s*:\s*inline-block/i.test(style)) allowed.push('display: inline-block');
+    if (/align-items\s*:\s*baseline/i.test(style)) allowed.push('align-items: baseline');
+    if (/flex-shrink\s*:\s*0/i.test(style)) allowed.push('flex-shrink: 0');
+    const widthMatch = style.match(/width\s*:\s*(\d+ch)/i);
+    if (widthMatch) allowed.push(`width: ${widthMatch[1]}`);
+    const gapMatch = style.match(/gap\s*:\s*([^;]+)/i);
+    if (gapMatch && /^[\d.]+\s*em$/.test(gapMatch[1].trim())) allowed.push(`gap: ${gapMatch[1].trim()}`);
+    const marginMatch = style.match(/margin\s*:\s*([^;]+)/i);
+    if (marginMatch) {
+      const m = marginMatch[1].trim();
+      // e.g. "0.5em 0" or "0.5em 0em"
+      if (/^[\d.]+\s*em\s+[\d.]+(\s*em)?$/.test(m)) allowed.push(`margin: ${m}`);
+    }
+    const marginBottomMatch = style.match(/margin-bottom\s*:\s*([^;]+)/i);
+    if (marginBottomMatch && /^[\d.]+\s*em$/.test(marginBottomMatch[1].trim())) allowed.push(`margin-bottom: ${marginBottomMatch[1].trim()}`);
+    if (allowed.length > 0) attrs['style'] = allowed.join('; ');
   }
   return attrs;
 }
