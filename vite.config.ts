@@ -10,10 +10,7 @@ export default defineConfig(() => ({
   },
   build: {
     rollupOptions: {
-      input: path.resolve(
-        __dirname,
-        process.env.VITE_HTML_ENTRY || "index.html"
-      ),
+      input: path.resolve(__dirname, "index.html"),
     },
   },
   plugins: [react()],

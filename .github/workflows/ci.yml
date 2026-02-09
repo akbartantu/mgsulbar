@@ -13,17 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # EISDIR fix: on Linux index.html can be a directory after checkout; write blob content as file
-      - name: Ensure index.html is a file
-        run: |
-          if [ -d index.html ] || [ ! -f index.html ]; then
-            echo "index.html is directory or missing, writing from Git blob"
-            rm -rf index.html
-            git show HEAD:index.html > index.html
-          fi
-          file index.html
-          ls -la index.html
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -36,16 +25,7 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # CI-only: use separate HTML entry so Vite never reads index.html (avoids EISDIR when index.html is a directory)
-      - name: Create HTML entry for build
-        run: |
-          git show HEAD:index.html > vite-entry.html
-          file vite-entry.html
-          ls -la vite-entry.html
-
       - name: Build
-        env:
-          VITE_HTML_ENTRY: vite-entry.html
         run: npm run build
 
   backend:
