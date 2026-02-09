@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, deploy]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, deploy]
 
 jobs:
   frontend:
@@ -13,13 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      # Ensure index.html is a file (EISDIR fix: Git/npm can leave it as a directory on Linux)
+      # EISDIR fix: on Linux checkout index.html can be a directory; restore as file before any other step
       - name: Ensure index.html is a file
         run: |
           if [ -d index.html ]; then
@@ -29,6 +23,12 @@ jobs:
           fi
           file index.html
           ls -la index.html
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -52,7 +52,9 @@ jobs:
           ls -la index.html
 
       - name: Build
-        run: npm run build
+        run: |
+          if [ -d index.html ]; then rm -rf index.html && git checkout -- index.html; fi
+          npm run build
 
   backend:
     name: Backend (install + start check)
