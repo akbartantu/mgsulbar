@@ -36,21 +36,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # Verify index.html is still a file before build (diagnostic: if directory, npm ci may have changed it)
-      - name: Verify index.html before build
+      # CI-only: use separate HTML entry so Vite never reads index.html (avoids EISDIR when index.html is a directory)
+      - name: Create HTML entry for build
         run: |
-          if [ -d index.html ] || [ ! -f index.html ]; then
-            echo "index.html is directory or missing, writing from Git blob"
-            rm -rf index.html
-            git show HEAD:index.html > index.html
-          fi
-          file index.html
-          ls -la index.html
+          git show HEAD:index.html > vite-entry.html
+          file vite-entry.html
+          ls -la vite-entry.html
 
       - name: Build
-        run: |
-          if [ -d index.html ] || [ ! -f index.html ]; then rm -rf index.html && git show HEAD:index.html > index.html; fi
-          npm run build
+        env:
+          VITE_HTML_ENTRY: vite-entry.html
+        run: npm run build
 
   backend:
     name: Backend (install + start check)

@@ -21,6 +21,9 @@ server/service-account.json
 # Debug logs
 .cursor/debug.log
 
+# CI-only HTML entry (created in workflow, avoid committing)
+vite-entry.html
+
 # Project docs (only root README is pushed)
 docs/
 
