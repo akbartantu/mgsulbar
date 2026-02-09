@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npx vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "render:build": "npm ci && npm run build && node scripts/copy-dist-to-server.cjs && cd server && npm ci",
+    "render:build": "npm ci --include=dev && npm run build && node scripts/copy-dist-to-server.cjs && cd server && npm ci",
     "render:start": "cd server && node index.js"
   },
   "dependencies": {
