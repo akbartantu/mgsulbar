@@ -13,13 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # EISDIR fix: on Linux checkout index.html can be a directory; restore as file before any other step
+      # EISDIR fix: on Linux index.html can be a directory after checkout; write blob content as file
       - name: Ensure index.html is a file
         run: |
-          if [ -d index.html ]; then
-            echo "index.html is a directory, restoring from Git"
+          if [ -d index.html ] || [ ! -f index.html ]; then
+            echo "index.html is directory or missing, writing from Git blob"
             rm -rf index.html
-            git checkout -- index.html
+            git show HEAD:index.html > index.html
           fi
           file index.html
           ls -la index.html
@@ -39,21 +39,17 @@ jobs:
       # Verify index.html is still a file before build (diagnostic: if directory, npm ci may have changed it)
       - name: Verify index.html before build
         run: |
-          if [ -d index.html ]; then
-            echo "ERROR: index.html is a directory after npm ci, restoring from Git"
+          if [ -d index.html ] || [ ! -f index.html ]; then
+            echo "index.html is directory or missing, writing from Git blob"
             rm -rf index.html
-            git checkout -- index.html
-          fi
-          if [ ! -f index.html ]; then
-            echo "ERROR: index.html is missing or not a regular file"
-            exit 1
+            git show HEAD:index.html > index.html
           fi
           file index.html
           ls -la index.html
 
       - name: Build
         run: |
-          if [ -d index.html ]; then rm -rf index.html && git checkout -- index.html; fi
+          if [ -d index.html ] || [ ! -f index.html ]; then rm -rf index.html && git show HEAD:index.html > index.html; fi
           npm run build
 
   backend:
