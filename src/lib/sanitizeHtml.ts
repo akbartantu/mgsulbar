@@ -112,7 +112,9 @@ export function sanitizeHtml(html: string): string {
       if (typeof document !== 'undefined' && (tag === 'blockquote' || tag === 'blockquote'.toLowerCase())) {
         try {
           fetch('http://127.0.0.1:7246/ingest/55bae2bf-7bcd-493f-9377-31aad3707983',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sanitizeHtml.ts:strip-tag',message:'Stripping disallowed tag',data:{tag},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
-        } catch (_) {}
+        } catch {
+          // Intentionally ignore (debug instrumentation)
+        }
       }
       // #endregion
       Array.from(node.childNodes).forEach(walk);
