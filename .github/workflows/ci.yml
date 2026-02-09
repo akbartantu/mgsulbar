@@ -19,11 +19,37 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      # Ensure index.html is a file (EISDIR fix: Git/npm can leave it as a directory on Linux)
+      - name: Ensure index.html is a file
+        run: |
+          if [ -d index.html ]; then
+            echo "index.html is a directory, restoring from Git"
+            rm -rf index.html
+            git checkout -- index.html
+          fi
+          file index.html
+          ls -la index.html
+
       - name: Install dependencies
         run: npm ci
 
       - name: Lint
         run: npm run lint
+
+      # Verify index.html is still a file before build (diagnostic: if directory, npm ci may have changed it)
+      - name: Verify index.html before build
+        run: |
+          if [ -d index.html ]; then
+            echo "ERROR: index.html is a directory after npm ci, restoring from Git"
+            rm -rf index.html
+            git checkout -- index.html
+          fi
+          if [ ! -f index.html ]; then
+            echo "ERROR: index.html is missing or not a regular file"
+            exit 1
+          fi
+          file index.html
+          ls -la index.html
 
       - name: Build
         run: npm run build
