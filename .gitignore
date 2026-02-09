@@ -21,6 +21,9 @@ server/service-account.json
 # Debug logs
 .cursor/debug.log
 
+# Project docs (only root README is pushed)
+docs/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
