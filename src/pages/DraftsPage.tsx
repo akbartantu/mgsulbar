@@ -1,37 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LetterList } from '@/components/mail/LetterList';
 import { LetterDetailDialog } from '@/components/mail/LetterDetailDialog';
 import { LacakSuratDialog } from '@/components/mail/LacakSuratDialog';
-import { api } from '@/lib/api';
+import { useLetters } from '@/hooks/useDataWithFallback';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Letter } from '@/types/mail';
 import { FileEdit } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useToast } from '@/hooks/use-toast';
 
 export default function DraftsPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const [letters, setLetters] = useState<Letter[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { letters: allLetters, loading } = useLetters();
+  const letters = allLetters.filter((l) => l.status === 'draft');
   const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [trackLetter, setTrackLetter] = useState<Letter | null>(null);
   const [trackOpen, setTrackOpen] = useState(false);
-
-  useEffect(() => {
-    api
-      .getLetters()
-      .then((list) => setLetters(list.filter((l) => l.status === 'draft')))
-      .catch(() => {
-        toast({ title: 'Gagal memuat draft', variant: 'destructive' });
-        setLetters([]);
-      })
-      .finally(() => setLoading(false));
-  }, [toast]);
 
   const handleLetterClick = (letter: Letter) => {
     setSelectedLetter(letter);

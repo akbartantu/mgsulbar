@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { mockLetters } from '@/data/mockData';
+import { useLetters } from '@/hooks/useDataWithFallback';
 import { LetterList } from '@/components/mail/LetterList';
 import { LacakSuratDialog } from '@/components/mail/LacakSuratDialog';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,9 +10,10 @@ import { motion } from 'framer-motion';
 
 export default function ArchivePage() {
   const { user } = useAuth();
+  const { letters } = useLetters();
   const [trackLetter, setTrackLetter] = useState<Letter | null>(null);
   const [trackOpen, setTrackOpen] = useState(false);
-  const archivedLetters = mockLetters.filter(l => l.status === 'archived' || l.status === 'sent');
+  const archivedLetters = letters.filter(l => l.status === 'archived' || l.status === 'sent');
 
   return (
     <AppLayout>

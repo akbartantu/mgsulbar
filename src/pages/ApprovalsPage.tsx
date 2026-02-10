@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LetterList } from '@/components/mail/LetterList';
 import { LetterDetailDialog } from '@/components/mail/LetterDetailDialog';
-import { api } from '@/lib/api';
+import { useLetters } from '@/hooks/useDataWithFallback';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Letter, ApprovalStep } from '@/types/mail';
 import { ClipboardCheck } from 'lucide-react';
@@ -20,27 +20,16 @@ export default function ApprovalsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [letters, setLetters] = useState<Letter[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { letters: allLetters, loading, refetch } = useLetters();
+  const letters = useMemo(
+    () =>
+      user?.id
+        ? allLetters.filter((l) => l.status === 'pending_approval' && isPendingForUser(l, user.id))
+        : allLetters.filter((l) => l.status === 'pending_approval'),
+    [allLetters, user?.id]
+  );
   const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-
-  useEffect(() => {
-    api
-      .getLetters()
-      .then((list) => {
-        if (user?.id) {
-          setLetters(list.filter((l) => l.status === 'pending_approval' && isPendingForUser(l, user.id)));
-        } else {
-          setLetters(list.filter((l) => l.status === 'pending_approval'));
-        }
-      })
-      .catch(() => {
-        toast({ title: 'Gagal memuat persetujuan', variant: 'destructive' });
-        setLetters([]);
-      })
-      .finally(() => setLoading(false));
-  }, [user?.id, toast]);
 
   const handleLetterClick = (letter: Letter) => {
     setSelectedLetter(letter);
@@ -108,7 +97,7 @@ export default function ApprovalsPage() {
       toast({ title: 'Surat disetujui' });
       setDetailOpen(false);
       setSelectedLetter(null);
-      setLetters((prev) => prev.filter((l) => l.id !== letter.id));
+      refetch();
     } catch {
       toast({ title: 'Gagal menyetujui', variant: 'destructive' });
     }
@@ -120,7 +109,7 @@ export default function ApprovalsPage() {
       toast({ title: 'Surat dikembalikan untuk revisi' });
       setDetailOpen(false);
       setSelectedLetter(null);
-      setLetters((prev) => prev.filter((l) => l.id !== letter.id));
+      refetch();
     } catch {
       toast({ title: 'Gagal mengembalikan', variant: 'destructive' });
     }
@@ -132,7 +121,7 @@ export default function ApprovalsPage() {
       toast({ title: 'Surat dibatalkan' });
       setDetailOpen(false);
       setSelectedLetter(null);
-      setLetters((prev) => prev.filter((l) => l.id !== letter.id));
+      refetch();
     } catch {
       toast({ title: 'Gagal membatalkan', variant: 'destructive' });
     }

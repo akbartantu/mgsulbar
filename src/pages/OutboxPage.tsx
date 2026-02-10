@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LetterList } from '@/components/mail/LetterList';
 import { LetterDetailDialog } from '@/components/mail/LetterDetailDialog';
@@ -6,6 +6,7 @@ import { LacakSuratDialog } from '@/components/mail/LacakSuratDialog';
 import SignatureDialog from '@/components/signature/SignatureDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
+import { useLetters } from '@/hooks/useDataWithFallback';
 import type { Letter, Signature } from '@/types/mail';
 import type { Member } from '@/lib/api';
 import { Send } from 'lucide-react';
@@ -27,9 +28,8 @@ function isUserSenderOrCc(letter: Letter, userId: string, members: Member[]): bo
 
 export default function OutboxPage() {
   const { user } = useAuth();
-  const [letters, setLetters] = useState<Letter[]>([]);
+  const { letters: allLetters, loading } = useLetters();
   const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [signatureOpen, setSignatureOpen] = useState(false);
@@ -39,25 +39,24 @@ export default function OutboxPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    Promise.all([
-      api.getLetters(),
-      api.getMembers({ periodId: 'current' }),
-    ])
-      .then(([list, memberList]) => {
-        setMembers(memberList);
-        const filtered = list.filter(
-          (l) =>
-            isApprovedOrSent(l) &&
-            (user?.id ? isUserSenderOrCc(l, user.id, memberList) : false)
-        );
-        setLetters(filtered);
-      })
+    api
+      .getMembers({ periodId: 'current' })
+      .then(setMembers)
       .catch(() => {
-        toast({ title: 'Gagal memuat dokumen', variant: 'destructive' });
-        setLetters([]);
-      })
-      .finally(() => setLoading(false));
-  }, [user?.id, toast]);
+        toast({ title: 'Gagal memuat anggota', variant: 'destructive' });
+        setMembers([]);
+      });
+  }, [toast]);
+
+  const letters = useMemo(
+    () =>
+      allLetters.filter(
+        (l) =>
+          isApprovedOrSent(l) &&
+          (user?.id ? isUserSenderOrCc(l, user.id, members) : false)
+      ),
+    [allLetters, user?.id, members]
+  );
 
   const handleLetterClick = (letter: Letter) => {
     setSelectedLetter(letter);

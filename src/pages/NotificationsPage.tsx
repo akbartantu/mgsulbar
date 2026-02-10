@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { api } from '@/lib/api';
+import { useDashboardStats } from '@/hooks/useDataWithFallback';
 import { ClipboardCheck, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -9,15 +10,16 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function NotificationsPage() {
   const { toast } = useToast();
-  const [awaitingCount, setAwaitingCount] = useState(0);
+  const { stats, loading: statsLoading } = useDashboardStats();
+  const awaitingCount = stats.awaitingMyApproval ?? 0;
   const [returned, setReturned] = useState<{ id: string; subject: string; updatedAt: string }[]>([]);
   const [approved, setApproved] = useState<{ id: string; subject: string; updatedAt: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [notifLoading, setNotifLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([api.getDashboardStats(), api.getNotifications()])
-      .then(([stats, notif]) => {
-        setAwaitingCount(stats.awaitingMyApproval ?? 0);
+    api
+      .getNotifications()
+      .then((notif) => {
         setReturned(
           (notif.returnedForRevision ?? []).map((l) => ({
             id: l.id,
@@ -35,9 +37,13 @@ export default function NotificationsPage() {
       })
       .catch(() => {
         toast({ title: 'Gagal memuat notifikasi', variant: 'destructive' });
+        setReturned([]);
+        setApproved([]);
       })
-      .finally(() => setLoading(false));
+      .finally(() => setNotifLoading(false));
   }, [toast]);
+
+  const loading = statsLoading || notifLoading;
 
   if (loading) {
     return (

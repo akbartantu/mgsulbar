@@ -1,7 +1,9 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { dashboardStats, mockLetters, currentUser } from '@/data/mockData';
+import { currentUser } from '@/data/mockData';
+import { useLetters, useDashboardStats } from '@/hooks/useDataWithFallback';
+import { useAuth } from '@/contexts/AuthContext';
 import { LetterCard } from '@/components/mail/LetterCard';
 import {
   Send,
@@ -18,11 +20,12 @@ import {
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
-const moduleCards = [
+function getModuleCards(stats: { outbox: number }) {
+  return [
   {
     label: 'Surat Menyurat',
     description: 'Kelola surat keluar, SK, dan proposal',
-    value: dashboardStats.outbox,
+    value: stats.outbox,
     unit: 'dokumen',
     icon: Mail,
     path: '/outbox',
@@ -65,10 +68,16 @@ const moduleCards = [
     color: 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400',
   },
 ];
+}
 
 export default function Dashboard() {
-  const recentLetters = mockLetters.slice(0, 3);
-  const pendingApprovals = mockLetters.filter(l => l.status === 'pending_approval').slice(0, 3);
+  const { user } = useAuth();
+  const { letters } = useLetters();
+  const { stats } = useDashboardStats();
+  const displayUser = user ?? currentUser;
+  const moduleCards = getModuleCards(stats);
+  const recentLetters = letters.slice(0, 3);
+  const pendingApprovals = letters.filter(l => l.status === 'pending_approval').slice(0, 3);
 
   return (
     <AppLayout>
@@ -80,7 +89,7 @@ export default function Dashboard() {
           className="mb-8"
         >
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-            Selamat Datang, {currentUser.name.split(' ')[0]}
+            Selamat Datang, {displayUser.name.split(' ')[0]}
           </h1>
           <p className="text-muted-foreground">
             Ringkasan aktivitas organisasi Ikatan Awardee Beasiswa
@@ -194,7 +203,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
                   <span className="text-sm text-muted-foreground">Draft Surat</span>
-                  <span className="font-semibold text-foreground">{dashboardStats.drafts}</span>
+                  <span className="font-semibold text-foreground">{stats.drafts}</span>
                 </div>
               </CardContent>
             </Card>
