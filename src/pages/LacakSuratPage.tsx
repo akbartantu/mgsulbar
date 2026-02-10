@@ -47,15 +47,12 @@ export default function LacakSuratPage() {
           </p>
         </motion.div>
 
-        {loading ? (
-          <p className="text-muted-foreground text-sm">Memuat surat...</p>
-        ) : (
-          <LetterList
-            letters={letters}
-            onLetterClick={handleLetterClick}
-            emptyMessage="Belum ada surat yang Anda buat"
-          />
-        )}
+        <LetterList
+          letters={letters}
+          onLetterClick={handleLetterClick}
+          isLoading={loading}
+          emptyMessage="Belum ada surat yang Anda buat. Tambahkan data pertama Anda."
+        />
 
         <LacakSuratDialog
           open={trackOpen}

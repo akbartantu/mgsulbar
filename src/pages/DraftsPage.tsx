@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LetterList } from '@/components/mail/LetterList';
-import { LetterDetailDialog } from '@/components/mail/LetterDetailDialog';
-import { LacakSuratDialog } from '@/components/mail/LacakSuratDialog';
+import { LetterDetailDialog } from '../components/mail/LetterDetailDialog';
+import { LacakSuratDialog } from '../components/mail/LacakSuratDialog';
 import { useLetters } from '@/hooks/useDataWithFallback';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDashboardStatsRefetch } from '@/contexts/DashboardStatsContext';
+import { api } from '@/lib/api';
 import type { Letter } from '@/types/mail';
 import { FileEdit } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -13,6 +15,7 @@ import { motion } from 'framer-motion';
 export default function DraftsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const refetchStats = useDashboardStatsRefetch();
   const { letters: allLetters, loading } = useLetters();
   const letters = allLetters.filter((l) => l.status === 'draft');
   const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
@@ -23,6 +26,7 @@ export default function DraftsPage() {
   const handleLetterClick = (letter: Letter) => {
     setSelectedLetter(letter);
     setDetailOpen(true);
+    api.markLetterAsRead(letter.id).then(() => refetchStats?.()).catch(() => {});
   };
 
   const handleEdit = (letter: Letter) => {
@@ -54,20 +58,17 @@ export default function DraftsPage() {
           </p>
         </motion.div>
 
-        {loading ? (
-          <p className="text-muted-foreground text-sm">Memuat draft...</p>
-        ) : (
-          <LetterList
-            letters={letters}
-            onLetterClick={handleLetterClick}
-            currentUserId={user?.id}
-            onTrack={(letter) => {
-              setTrackLetter(letter);
-              setTrackOpen(true);
-            }}
-            emptyMessage="Tidak ada draft tersimpan"
-          />
-        )}
+        <LetterList
+          letters={letters}
+          onLetterClick={handleLetterClick}
+          currentUserId={user?.id}
+          onTrack={(letter) => {
+            setTrackLetter(letter);
+            setTrackOpen(true);
+          }}
+          isLoading={loading}
+          emptyMessage="Belum ada draft. Buat surat pertama Anda."
+        />
 
         <LacakSuratDialog
           open={trackOpen}

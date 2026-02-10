@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 
 export default function ArchivePage() {
   const { user } = useAuth();
-  const { letters } = useLetters();
+  const { letters, loading } = useLetters();
   const [trackLetter, setTrackLetter] = useState<Letter | null>(null);
   const [trackOpen, setTrackOpen] = useState(false);
   const archivedLetters = letters.filter(l => l.status === 'archived' || l.status === 'sent');
@@ -41,7 +41,8 @@ export default function ArchivePage() {
             setTrackLetter(letter);
             setTrackOpen(true);
           }}
-          emptyMessage="Belum ada surat yang diarsipkan"
+          isLoading={loading}
+          emptyMessage="Belum ada surat yang diarsipkan. Tambahkan data pertama Anda."
         />
 
         <LacakSuratDialog

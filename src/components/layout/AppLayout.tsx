@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { currentUser } from '@/data/mockData';
+import { DashboardStatsProvider } from '@/contexts/DashboardStatsContext';
 import { useDashboardStats } from '@/hooks/useDataWithFallback';
 import type { DashboardStats } from '@/types/mail';
 import {
@@ -112,9 +112,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const { stats } = useDashboardStats();
+  const { stats, refetch } = useDashboardStats();
 
   return (
+    <DashboardStatsProvider value={{ refetchDashboardStats: refetch }}>
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 gradient-header z-50 flex items-center justify-between px-4">
@@ -126,7 +127,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <h1 className="text-sidebar-foreground font-semibold">Ikatan Awardee</h1>
+        <h1 className="text-sidebar-foreground font-semibold">MGSULBAR</h1>
         <Button variant="ghost" size="iconSm" className="text-sidebar-foreground">
           <Bell className="h-5 w-5" />
         </Button>
@@ -181,6 +182,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         {children}
       </main>
     </div>
+    </DashboardStatsProvider>
   );
 }
 
@@ -195,7 +197,7 @@ interface SidebarContentProps {
 function SidebarContent({ collapsed, onToggleCollapse, onClose, currentPath, navGroups }: SidebarContentProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const displayUser = user ?? currentUser;
+  const displayUser = user ?? { name: 'Pengguna', id: '', email: '', role: 'viewer' as const };
 
   const handleLogout = () => {
     logout();
@@ -214,7 +216,7 @@ function SidebarContent({ collapsed, onToggleCollapse, onClose, currentPath, nav
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
               <GraduationCap className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg text-sidebar-foreground">Ikatan Awardee</span>
+            <span className="font-bold text-lg text-sidebar-foreground">MGSULBAR</span>
           </div>
         )}
         {collapsed && (

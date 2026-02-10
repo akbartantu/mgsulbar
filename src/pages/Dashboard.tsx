@@ -1,8 +1,7 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { currentUser } from '@/data/mockData';
-import { useLetters, useDashboardStats } from '@/hooks/useDataWithFallback';
+import { useLetters, useDashboardStats, useDashboardSummary, type DashboardSummary } from '@/hooks/useDataWithFallback';
 import { useAuth } from '@/contexts/AuthContext';
 import { LetterCard } from '@/components/mail/LetterCard';
 import {
@@ -16,11 +15,18 @@ import {
   UsersRound,
   Mail,
   TrendingUp,
+  PlusCircle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
-function getModuleCards(stats: { outbox: number }) {
+function formatSaldo(totalSaldo: number): string {
+  const abs = Math.abs(totalSaldo);
+  if (abs >= 1_000_000) return `Rp ${(totalSaldo / 1_000_000).toFixed(1)}jt`;
+  return `Rp ${totalSaldo.toLocaleString('id-ID')}`;
+}
+
+function getModuleCards(stats: { outbox: number }, summary: DashboardSummary) {
   return [
   {
     label: 'Surat Menyurat',
@@ -34,7 +40,7 @@ function getModuleCards(stats: { outbox: number }) {
   {
     label: 'Database Awardee',
     description: 'Data penerima beasiswa',
-    value: 156,
+    value: summary.awardeeCount,
     unit: 'awardee',
     icon: GraduationCap,
     path: '/awardees',
@@ -43,7 +49,7 @@ function getModuleCards(stats: { outbox: number }) {
   {
     label: 'Monitoring Program',
     description: 'Tracking kegiatan organisasi',
-    value: 4,
+    value: summary.programCount,
     unit: 'program',
     icon: BarChart3,
     path: '/programs',
@@ -52,7 +58,7 @@ function getModuleCards(stats: { outbox: number }) {
   {
     label: 'Keuangan',
     description: 'Anggaran dan realisasi',
-    value: 'Rp 37,5jt',
+    value: formatSaldo(summary.totalSaldo),
     unit: 'saldo',
     icon: Wallet,
     path: '/finance',
@@ -61,7 +67,7 @@ function getModuleCards(stats: { outbox: number }) {
   {
     label: 'Anggota',
     description: 'Manajemen anggota organisasi',
-    value: 6,
+    value: summary.memberCount,
     unit: 'anggota',
     icon: UsersRound,
     path: '/members',
@@ -72,10 +78,11 @@ function getModuleCards(stats: { outbox: number }) {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { letters } = useLetters();
+  const { letters, loading: lettersLoading } = useLetters();
   const { stats } = useDashboardStats();
-  const displayUser = user ?? currentUser;
-  const moduleCards = getModuleCards(stats);
+  const { summary } = useDashboardSummary();
+  const displayUser = user ?? { name: 'Pengguna', id: '', email: '', role: 'viewer' as const };
+  const moduleCards = getModuleCards(stats, summary);
   const recentLetters = letters.slice(0, 3);
   const pendingApprovals = letters.filter(l => l.status === 'pending_approval').slice(0, 3);
 
@@ -143,9 +150,21 @@ export default function Dashboard() {
                 </Link>
               </CardHeader>
               <CardContent className="space-y-3">
-                {recentLetters.map((letter, index) => (
-                  <LetterCard key={letter.id} letter={letter} index={index} />
-                ))}
+                {letters.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="text-sm mb-3">Belum ada surat. Tambahkan surat pertama Anda.</p>
+                    <Link to="/create">
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <PlusCircle className="h-4 w-4" />
+                        Buat surat
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  recentLetters.map((letter, index) => (
+                    <LetterCard key={letter.id} letter={letter} index={index} />
+                  ))
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -195,11 +214,11 @@ export default function Dashboard() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
                   <span className="text-sm text-muted-foreground">Awardee Aktif</span>
-                  <span className="font-semibold text-foreground">89</span>
+                  <span className="font-semibold text-foreground">{summary.awardeeAktifCount}</span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
                   <span className="text-sm text-muted-foreground">Program Berjalan</span>
-                  <span className="font-semibold text-foreground">2</span>
+                  <span className="font-semibold text-foreground">{summary.programBerjalanCount}</span>
                 </div>
                 <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
                   <span className="text-sm text-muted-foreground">Draft Surat</span>

@@ -2,7 +2,7 @@ import { getSheetsClient, readAll, ensureSheets, appendRow, updateRowByIndex, SH
 
 const USER_HEADERS = ['id', 'name', 'email', 'role', 'passwordHash', 'status', 'approvedAt', 'approvedById'];
 
-function rowToUser(row) {
+export function rowToUser(row) {
   return {
     id: row.id || '',
     name: row.name || '',

@@ -4,7 +4,7 @@ import { getActivePeriod } from './periods.js';
 
 const MEMBER_HEADERS = ['id', 'userId', 'periodId', 'name', 'role', 'department', 'email', 'status'];
 
-function rowToMember(row) {
+export function rowToMember(row) {
   return {
     id: row.id ?? '',
     userId: row.userId ?? '',

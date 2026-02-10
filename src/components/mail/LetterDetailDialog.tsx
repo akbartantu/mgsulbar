@@ -33,6 +33,7 @@ import {
   FileDown
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDashboardStatsRefetch } from '@/contexts/DashboardStatsContext';
 import { generateLetterPdf } from '@/lib/generateLetterPdf';
 import { MapPin, Pencil, Check, RotateCcw, X, Forward } from 'lucide-react';
 import { ContentPreview } from '@/components/mail/ContentPreview';
@@ -93,6 +94,7 @@ export function LetterDetailDialog({
 }: LetterDetailDialogProps) {
   const isMobile = useIsMobile();
   const { user: currentUser } = useAuth();
+  const refetchDashboardStats = useDashboardStatsRefetch();
   const [approvalComment, setApprovalComment] = useState('');
   const [forwardOpen, setForwardOpen] = useState(false);
   const [forwardMembers, setForwardMembers] = useState<Member[]>([]);
@@ -105,6 +107,18 @@ export function LetterDetailDialog({
       setForwardSelectedIds([]);
     }
   }, [forwardOpen]);
+
+  useEffect(() => {
+    if (!open || !letter?.id) return;
+    const log = (msg: string, data: Record<string, unknown>) => fetch('http://127.0.0.1:7246/ingest/55bae2bf-7bcd-493f-9377-31aad3707983',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'LetterDetailDialog.tsx:markRead',message:msg,data,timestamp:Date.now()})}).catch(()=>{});
+    log('markRead effect run', { letterId: letter.id, hasRefetch: !!refetchDashboardStats });
+    api.markLetterAsRead(letter.id)
+      .then(() => {
+        log('markLetterAsRead success', { letterId: letter.id });
+        refetchDashboardStats?.();
+      })
+      .catch((e) => log('markLetterAsRead error', { letterId: letter.id, err: e?.message }));
+  }, [open, letter?.id, refetchDashboardStats]);
 
   if (!letter) return null;
 
@@ -302,9 +316,9 @@ export function LetterDetailDialog({
               Lampiran ({letter.attachments.length})
             </h3>
             <div className="space-y-2">
-              {letter.attachments.map((att) => (
+              {letter.attachments.map((att, attIdx) => (
                 <div 
-                  key={att.id} 
+                  key={att.id ?? `att-${attIdx}`} 
                   className="flex items-center gap-2 p-2 bg-muted rounded text-sm"
                 >
                   <Paperclip className="h-4 w-4 text-muted-foreground" />
@@ -326,23 +340,23 @@ export function LetterDetailDialog({
               Tanda Tangan
             </h3>
             <div className="grid gap-3">
-              {letter.signatures.map((sig) => (
+              {letter.signatures.map((sig, sigIdx) => (
                 <div 
-                  key={sig.id} 
+                  key={sig.id ?? `sig-${sigIdx}`} 
                   className="p-3 border rounded-lg bg-card"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      <span className="font-medium text-sm">{sig.signedBy.name}</span>
+                      <span className="font-medium text-sm">{sig.signedBy?.name ?? '—'}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {format(new Date(sig.signedAt), 'd MMM yyyy HH:mm', { locale: id })}
+                      {sig.signedAt ? format(new Date(sig.signedAt), 'd MMM yyyy HH:mm', { locale: id }) : '—'}
                     </span>
                   </div>
                   <img 
                     src={sig.signatureDataUrl} 
-                    alt={`Tanda tangan ${sig.signedBy.name}`}
+                    alt={`Tanda tangan ${sig.signedBy?.name ?? '—'}`}
                     className="max-h-16 bg-white rounded border"
                   />
                 </div>
@@ -429,7 +443,7 @@ export function LetterDetailDialog({
             <div className="space-y-2">
               {letter.approvalSteps.map((step, idx) => (
                 <div 
-                  key={step.id} 
+                  key={step.id ?? `step-${idx}`} 
                   className={`flex flex-col gap-1 p-2 rounded text-sm ${
                     step.status === 'approved' ? 'bg-green-50 border-green-200' :
                     step.status === 'rejected' ? 'bg-red-50 border-red-200' :
@@ -503,8 +517,8 @@ export function LetterDetailDialog({
             <p className="text-sm text-muted-foreground">Pilih anggota yang akan menerima surat ini.</p>
             <ScrollArea className="max-h-[240px] rounded border p-2">
               <div className="space-y-2">
-                {availableMembers.map((m) => (
-                  <label key={m.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                {availableMembers.map((m, idx) => (
+                  <label key={m.id ?? `member-${idx}`} className="flex items-center gap-2 cursor-pointer text-sm">
                     <Checkbox
                       checked={forwardSelectedIds.includes(m.id)}
                       onCheckedChange={(checked) =>
@@ -553,8 +567,8 @@ export function LetterDetailDialog({
           <p className="text-sm text-muted-foreground">Pilih anggota yang akan menerima surat ini.</p>
           <ScrollArea className="max-h-[240px] rounded border p-2">
             <div className="space-y-2">
-              {availableMembers.map((m) => (
-                <label key={m.id} className="flex items-center gap-2 cursor-pointer text-sm">
+              {availableMembers.map((m, idx) => (
+                <label key={m.id ?? `member-${idx}`} className="flex items-center gap-2 cursor-pointer text-sm">
                   <Checkbox
                     checked={forwardSelectedIds.includes(m.id)}
                     onCheckedChange={(checked) =>
