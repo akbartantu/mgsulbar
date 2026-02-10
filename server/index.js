@@ -29,13 +29,18 @@ app.get('/api/health', (_req, res) => {
 app.use('/api', apiRoutes);
 
 // Production: serve frontend static files (Render single-service deploy)
+// SPA fallback: any non-API GET request that doesn't match a static file gets index.html
 if (process.env.NODE_ENV === 'production') {
   const publicDir = path.join(__dirname, 'public');
   if (fs.existsSync(publicDir)) {
-    app.use(express.static(publicDir));
+    app.use(
+      express.static(publicDir, { fallthrough: true })
+    );
     app.get('*', (req, res, next) => {
       if (req.path.startsWith('/api')) return next();
-      res.sendFile(path.join(publicDir, 'index.html'));
+      res.sendFile(path.join(publicDir, 'index.html'), (err) => {
+        if (err) next(err);
+      });
     });
   }
 }

@@ -1,37 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { LetterList } from '@/components/mail/LetterList';
 import { LacakSuratDialog } from '@/components/mail/LacakSuratDialog';
-import { api } from '@/lib/api';
+import { useLetters } from '@/hooks/useDataWithFallback';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Letter } from '@/types/mail';
 import { MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useToast } from '@/hooks/use-toast';
 
 export default function LacakSuratPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [letters, setLetters] = useState<Letter[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { letters: allLetters, loading } = useLetters();
+  const letters = useMemo(
+    () => (user?.id ? allLetters.filter((l) => l.createdBy?.id === user.id) : []),
+    [allLetters, user?.id]
+  );
   const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
   const [trackOpen, setTrackOpen] = useState(false);
-
-  useEffect(() => {
-    if (!user?.id) {
-      setLetters([]);
-      setLoading(false);
-      return;
-    }
-    api
-      .getLetters()
-      .then((list) => setLetters(list.filter((l) => l.createdBy?.id === user.id)))
-      .catch(() => {
-        toast({ title: 'Gagal memuat surat', variant: 'destructive' });
-        setLetters([]);
-      })
-      .finally(() => setLoading(false));
-  }, [user?.id, toast]);
 
   const handleLetterClick = (letter: Letter) => {
     setSelectedLetter(letter);

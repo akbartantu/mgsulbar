@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { currentUser, dashboardStats } from '@/data/mockData';
+import { currentUser } from '@/data/mockData';
+import { useDashboardStats } from '@/hooks/useDataWithFallback';
+import type { DashboardStats } from '@/types/mail';
 import {
   LayoutDashboard,
   Send,
@@ -45,61 +47,63 @@ interface NavGroup {
   }[];
 }
 
-const navGroups: NavGroup[] = [
-  {
-    label: 'Surat Menyurat',
-    icon: Mail,
-    basePath: '/surat',
-    items: [
-      { path: '/outbox', label: 'Dokumen', icon: Send, badge: dashboardStats.outbox },
-      { path: '/drafts', label: 'Draft', icon: FileEdit, badge: dashboardStats.drafts },
-      { path: '/lacak', label: 'Lacak Surat', icon: MapPin },
-      { path: '/approvals', label: 'Persetujuan', icon: ClipboardCheck, badge: dashboardStats.awaitingMyApproval },
-      { path: '/notifications', label: 'Notifikasi', icon: Bell },
-      { path: '/archive', label: 'Arsip', icon: Archive },
-    ],
-  },
-  {
-    label: 'Database Awardee',
-    icon: GraduationCap,
-    basePath: '/awardees',
-    items: [
-      { path: '/awardees', label: 'Data Awardee', icon: GraduationCap },
-    ],
-  },
-  {
-    label: 'Monitoring Program',
-    icon: BarChart3,
-    basePath: '/programs',
-    items: [
-      { path: '/programs', label: 'Daftar Program', icon: BarChart3 },
-    ],
-  },
-  {
-    label: 'Keuangan',
-    icon: Wallet,
-    basePath: '/finance',
-    items: [
-      { path: '/finance', label: 'Keuangan', icon: Wallet },
-    ],
-  },
-  {
-    label: 'Manajemen Anggota',
-    icon: UsersRound,
-    basePath: '/members',
-    items: [
-      { path: '/members', label: 'Data Anggota', icon: UsersRound },
-    ],
-  },
-  {
-    label: 'Pengaturan',
-    icon: Settings,
-    basePath: '/pengaturan',
-    items: [
-      { path: '/pengaturan', label: 'Pengaturan', icon: Settings },
-    ],
-  },
-];
+function getNavGroups(stats: DashboardStats): NavGroup[] {
+  return [
+    {
+      label: 'Surat Menyurat',
+      icon: Mail,
+      basePath: '/surat',
+      items: [
+        { path: '/outbox', label: 'Dokumen', icon: Send, badge: stats.outbox },
+        { path: '/drafts', label: 'Draft', icon: FileEdit, badge: stats.drafts },
+        { path: '/lacak', label: 'Lacak Surat', icon: MapPin },
+        { path: '/approvals', label: 'Persetujuan', icon: ClipboardCheck, badge: stats.awaitingMyApproval },
+        { path: '/notifications', label: 'Notifikasi', icon: Bell },
+        { path: '/archive', label: 'Arsip', icon: Archive },
+      ],
+    },
+    {
+      label: 'Database Awardee',
+      icon: GraduationCap,
+      basePath: '/awardees',
+      items: [
+        { path: '/awardees', label: 'Data Awardee', icon: GraduationCap },
+      ],
+    },
+    {
+      label: 'Monitoring Program',
+      icon: BarChart3,
+      basePath: '/programs',
+      items: [
+        { path: '/programs', label: 'Daftar Program', icon: BarChart3 },
+      ],
+    },
+    {
+      label: 'Keuangan',
+      icon: Wallet,
+      basePath: '/finance',
+      items: [
+        { path: '/finance', label: 'Keuangan', icon: Wallet },
+      ],
+    },
+    {
+      label: 'Manajemen Anggota',
+      icon: UsersRound,
+      basePath: '/members',
+      items: [
+        { path: '/members', label: 'Data Anggota', icon: UsersRound },
+      ],
+    },
+    {
+      label: 'Pengaturan',
+      icon: Settings,
+      basePath: '/pengaturan',
+      items: [
+        { path: '/pengaturan', label: 'Pengaturan', icon: Settings },
+      ],
+    },
+  ];
+}
 
 // Paths belonging to surat menyurat module
 const suratPaths = ['/outbox', '/drafts', '/lacak', '/approvals', '/notifications', '/archive', '/create'];
@@ -108,6 +112,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { stats } = useDashboardStats();
 
   return (
     <div className="min-h-screen bg-background">
@@ -145,7 +150,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="lg:hidden fixed left-0 top-0 bottom-0 w-[280px] bg-sidebar z-50"
             >
-              <SidebarContent collapsed={false} onClose={() => setMobileOpen(false)} currentPath={location.pathname} />
+              <SidebarContent collapsed={false} onClose={() => setMobileOpen(false)} currentPath={location.pathname} navGroups={getNavGroups(stats)} />
             </motion.aside>
           </>
         )}
@@ -162,6 +167,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           collapsed={collapsed}
           onToggleCollapse={() => setCollapsed(!collapsed)}
           currentPath={location.pathname}
+          navGroups={getNavGroups(stats)}
         />
       </aside>
 
@@ -183,9 +189,10 @@ interface SidebarContentProps {
   onToggleCollapse?: () => void;
   onClose?: () => void;
   currentPath: string;
+  navGroups: NavGroup[];
 }
 
-function SidebarContent({ collapsed, onToggleCollapse, onClose, currentPath }: SidebarContentProps) {
+function SidebarContent({ collapsed, onToggleCollapse, onClose, currentPath, navGroups }: SidebarContentProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const displayUser = user ?? currentUser;
