@@ -5,6 +5,7 @@ import { LetterDetailDialog } from '@/components/mail/LetterDetailDialog';
 import { LacakSuratDialog } from '@/components/mail/LacakSuratDialog';
 import SignatureDialog from '@/components/signature/SignatureDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDashboardStatsRefetch } from '@/contexts/DashboardStatsContext';
 import { api } from '@/lib/api';
 import { useLetters } from '@/hooks/useDataWithFallback';
 import type { Letter, Signature } from '@/types/mail';
@@ -28,6 +29,7 @@ function isUserSenderOrCc(letter: Letter, userId: string, members: Member[]): bo
 
 export default function OutboxPage() {
   const { user } = useAuth();
+  const refetchStats = useDashboardStatsRefetch();
   const { letters: allLetters, loading } = useLetters();
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
@@ -61,6 +63,7 @@ export default function OutboxPage() {
   const handleLetterClick = (letter: Letter) => {
     setSelectedLetter(letter);
     setDetailOpen(true);
+    api.markLetterAsRead(letter.id).then(() => refetchStats?.()).catch(() => {});
   };
 
   const handleOpenSignature = (letter: Letter) => {
@@ -145,21 +148,18 @@ export default function OutboxPage() {
           </p>
         </motion.div>
 
-        {loading ? (
-          <p className="text-muted-foreground text-sm">Memuat dokumen...</p>
-        ) : (
-          <LetterList
-            letters={letters}
-            onLetterClick={handleLetterClick}
-            onSign={handleOpenSignature}
-            currentUserId={user?.id}
-            onTrack={(letter) => {
-              setTrackLetter(letter);
-              setTrackOpen(true);
-            }}
-            emptyMessage="Belum ada surat keluar"
-          />
-        )}
+        <LetterList
+          letters={letters}
+          onLetterClick={handleLetterClick}
+          onSign={handleOpenSignature}
+          currentUserId={user?.id}
+          onTrack={(letter) => {
+            setTrackLetter(letter);
+            setTrackOpen(true);
+          }}
+          isLoading={loading}
+          emptyMessage="Belum ada surat. Tambahkan surat pertama Anda."
+        />
       </div>
 
       <LacakSuratDialog

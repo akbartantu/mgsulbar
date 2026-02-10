@@ -5,6 +5,8 @@ import { LetterList } from '@/components/mail/LetterList';
 import { LetterDetailDialog } from '@/components/mail/LetterDetailDialog';
 import { useLetters } from '@/hooks/useDataWithFallback';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDashboardStatsRefetch } from '@/contexts/DashboardStatsContext';
+import { api } from '@/lib/api';
 import type { Letter, ApprovalStep } from '@/types/mail';
 import { ClipboardCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -20,6 +22,7 @@ export default function ApprovalsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const refetchStats = useDashboardStatsRefetch();
   const { letters: allLetters, loading, refetch } = useLetters();
   const letters = useMemo(
     () =>
@@ -34,6 +37,7 @@ export default function ApprovalsPage() {
   const handleLetterClick = (letter: Letter) => {
     setSelectedLetter(letter);
     setDetailOpen(true);
+    api.markLetterAsRead(letter.id).then(() => refetchStats?.()).catch(() => {});
   };
 
   const handleEdit = (letter: Letter) => {
@@ -151,15 +155,12 @@ export default function ApprovalsPage() {
           </p>
         </motion.div>
 
-        {loading ? (
-          <p className="text-muted-foreground text-sm">Memuat...</p>
-        ) : (
-          <LetterList
-            letters={letters}
-            onLetterClick={handleLetterClick}
-            emptyMessage="Tidak ada surat yang menunggu persetujuan"
-          />
-        )}
+        <LetterList
+          letters={letters}
+          onLetterClick={handleLetterClick}
+          isLoading={loading}
+          emptyMessage="Belum ada surat menunggu persetujuan."
+        />
 
         <LetterDetailDialog
           open={detailOpen}

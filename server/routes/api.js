@@ -6,6 +6,8 @@ import { getSheetsClient, ensureSheets, isSheetsRateLimitError } from '../sheets
 import * as lettersService from '../services/letters.js';
 import * as usersService from '../services/users.js';
 import * as dashboardService from '../services/dashboard.js';
+import * as letterVisibility from '../services/letterVisibility.js';
+import * as letterReadsService from '../services/letterReads.js';
 import * as templatesService from '../services/templates.js';
 import * as awardeesService from '../services/awardees.js';
 import * as programsService from '../services/programs.js';
@@ -279,12 +281,19 @@ router.delete('/departments/:id', async (req, res) => {
 });
 
 router.get('/dashboard/stats', authMiddleware, async (req, res) => {
+  const log = (msg, data) => fetch('http://127.0.0.1:7246/ingest/55bae2bf-7bcd-493f-9377-31aad3707983',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:GET /dashboard/stats',message:msg,data:data||{},timestamp:Date.now()})}).catch(()=>{});
   try {
     const userId = req.user?.id;
+    log('dashboard/stats entry', { userId: userId ? 'set' : 'missing' });
     const stats = await dashboardService.getDashboardStats(userId);
+    log('dashboard/stats success', { outbox: stats?.outbox, drafts: stats?.drafts });
     res.json(stats);
   } catch (err) {
+    log('dashboard/stats error', { errMessage: err?.message, errName: err?.name });
     console.error(err);
+    if (isSheetsRateLimitError(err)) {
+      return res.status(503).json({ error: 'Quota Google Sheets terlampaui. Coba lagi dalam satu menit.' });
+    }
     res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
 });
@@ -310,12 +319,37 @@ router.get('/notifications', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/letters', async (_req, res) => {
+/** Resolve sheet user id and role from req.user (for role-based letter visibility). */
+async function resolveSheetUser(req) {
+  const u = req.user;
+  if (!u) return { userId: null, role: 'viewer' };
+  if (u.role) return { userId: u.id, role: u.role };
+  const sheetUser = await usersService.getUserByEmail(u.email).catch(() => null);
+  if (sheetUser) return { userId: sheetUser.id, role: sheetUser.role || 'viewer' };
+  return { userId: u.id, role: 'viewer' };
+}
+
+router.get('/letters', async (req, res) => {
+  const log = (msg, data) => fetch('http://127.0.0.1:7246/ingest/55bae2bf-7bcd-493f-9377-31aad3707983',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:GET /letters',message:msg,data:data||{},timestamp:Date.now()})}).catch(()=>{});
   try {
+    log('letters entry', {});
     const letters = await lettersService.getLetters();
-    res.json(letters);
+    log('letters getLetters done', { count: letters?.length });
+    const { userId, role } = await resolveSheetUser(req);
+    log('letters resolveSheetUser done', { role });
+    if (role === 'admin') return res.json(letters);
+    const members = await membersService.getMembersForCurrentPeriod().catch(() => []);
+    const filtered = letters.filter((l) =>
+      letterVisibility.isLetterVisibleToUser(l, userId, role, members)
+    );
+    log('letters success', { filteredCount: filtered?.length });
+    res.json(filtered);
   } catch (err) {
+    log('letters error', { errMessage: err?.message, errName: err?.name });
     console.error(err);
+    if (isSheetsRateLimitError(err)) {
+      return res.status(503).json({ error: 'Quota Google Sheets terlampaui. Coba lagi dalam satu menit.' });
+    }
     res.status(500).json({ error: 'Failed to fetch letters' });
   }
 });
@@ -324,10 +358,35 @@ router.get('/letters/:id', async (req, res) => {
   try {
     const letter = await lettersService.getLetterById(req.params.id);
     if (!letter) return res.status(404).json({ error: 'Letter not found' });
+    const { userId, role } = await resolveSheetUser(req);
+    if (role === 'admin') return res.json(letter);
+    const members = await membersService.getMembersForCurrentPeriod().catch(() => []);
+    const visible = letterVisibility.isLetterVisibleToUser(letter, userId, role, members);
+    if (!visible) return res.status(404).json({ error: 'Letter not found' });
     res.json(letter);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch letter' });
+  }
+});
+
+router.post('/letters/:id/read', async (req, res) => {
+  const log = (msg, data) => fetch('http://127.0.0.1:7246/ingest/55bae2bf-7bcd-493f-9377-31aad3707983',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:POST /letters/:id/read',message:msg,data:data||{},timestamp:Date.now()})}).catch(()=>{});
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      log('read endpoint 401', {});
+      return res.status(401).json({ error: 'Authorization required' });
+    }
+    const letterId = req.params.id;
+    log('read endpoint called', { userId, letterId });
+    await letterReadsService.markAsRead(userId, letterId);
+    log('read endpoint success', { userId, letterId });
+    return res.status(204).send();
+  } catch (err) {
+    log('read endpoint error', { errMessage: err?.message });
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to mark letter as read' });
   }
 });
 

@@ -203,6 +203,22 @@ export const api = {
   updateUserAdmin,
   getLetters: () => request<Letter[]>('/api/letters'),
   getLetter: (id: string) => request<Letter>(`/api/letters/${id}`),
+  markLetterAsRead: async (letterId: string) => {
+    const res = await fetch(`${getBaseUrl()}/api/letters/${letterId}/read`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(getToken?.() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      },
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || `Request failed: ${res.status}`);
+    }
+    if (res.status === 204) return;
+    return res.json();
+  },
   createLetter: (letter: Partial<Letter>) =>
     request<Letter>('/api/letters', { method: 'POST', body: JSON.stringify(letter) }),
   updateLetter: (id: string, updates: Partial<Letter>) =>

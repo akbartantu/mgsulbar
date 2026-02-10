@@ -1,6 +1,7 @@
-import { getSheetsClient, readAll, appendRow, updateRowByIndex, ensureSheets, SHEETS_NAMES } from '../sheets.js';
-import { getUsersMap } from './users.js';
+import { getSheetsClient, readRanges, appendRow, updateRowByIndex, ensureSheets, SHEETS_NAMES } from '../sheets.js';
+import { rowToUser } from './users.js';
 import * as membersService from './members.js';
+import { rowToMember } from './members.js';
 
 const LETTER_HEADERS = [
   'id', 'referenceNumber', 'type', 'subject', 'content', 'status', 'priority', 'classification',
@@ -162,12 +163,28 @@ function letterToRow(letter) {
   };
 }
 
+function sheetRowsToObjects(rows) {
+  if (!Array.isArray(rows) || rows.length < 2) return [];
+  const headers = rows[0];
+  return rows.slice(1).map((row) => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = row[i] ?? ''; });
+    return obj;
+  });
+}
+
 export async function getLetters() {
   const client = await getSheetsClient();
   if (!client) return [];
-  await ensureSheets(client);
-  const usersMap = await getUsersMap();
-  const members = await membersService.getMembers().catch(() => []);
+  const ranges = [SHEETS_NAMES.LETTERS, SHEETS_NAMES.USERS, SHEETS_NAMES.MEMBERS];
+  const batch = await readRanges(client.spreadsheetId, ranges, {});
+  const lettersRows = batch[SHEETS_NAMES.LETTERS] ?? [];
+  const usersRows = batch[SHEETS_NAMES.USERS] ?? [];
+  const membersRows = batch[SHEETS_NAMES.MEMBERS] ?? [];
+  const usersList = sheetRowsToObjects(usersRows).map(rowToUser).filter((u) => u.id);
+  const usersMap = {};
+  usersList.forEach((u) => { usersMap[u.id] = u; });
+  const members = sheetRowsToObjects(membersRows).map(rowToMember).filter((m) => m.id !== '');
   const idToNameMap = { ...usersMap };
   members.forEach((m) => { idToNameMap[m.id] = idToNameMap[m.id] || { name: m.name }; });
   const approverMap = { ...usersMap };
@@ -175,7 +192,7 @@ export async function getLetters() {
     const approverId = (m.userId || '').trim() || m.id;
     approverMap[m.id] = approverMap[m.id] || { id: approverId, name: m.name, email: m.email || '', role: m.role || '', department: m.department || '' };
   });
-  const rows = await readAll(client, SHEETS_NAMES.LETTERS);
+  const rows = sheetRowsToObjects(lettersRows);
   const letters = [];
   for (const row of rows) {
     const letter = rowToLetter(row, usersMap, idToNameMap, approverMap);
